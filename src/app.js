@@ -117,12 +117,38 @@ app.post('/messages', async (req, res) => {
       return
     }
 
-    await db.collection("messages").insertOne(message)
+    await db.collection('messages').insertOne(message)
 
     res.send(201)
   } catch (error) {
     res.status(500).send(error.message)
   }
+})
+
+app.get('messages', async (req, res) => {
+  const limit = Number(req.query.limit)
+  const { user } = req.headers
+
+  try {
+    const messages = await db.collection('messages').find({}).toArray()
+    const filterMessages = messages.filter(message => {
+      const publicMessage = message.type === 'message'
+      const messageRelatedToUser =
+        message.to === 'Todos' || message.to === user || message.from === user
+
+      return publicMessage || messageRelatedToUser
+    })
+
+    if (limit === 0 || limit < 0 || limit === !isNaN) {
+      res.status(422).send(errors)
+      return
+    }
+
+    res.send(filterMessages.slice(-limit))
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
+
 })
 
 const PORT = 5000
