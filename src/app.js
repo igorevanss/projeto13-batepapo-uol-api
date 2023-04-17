@@ -113,7 +113,7 @@ app.post('/messages', async (req, res) => {
       .findOne({ name: user })
 
     if (!participantExists) {
-      res.sendStatus(409)
+      res.sendStatus(422)
       return
     }
 
@@ -145,6 +145,7 @@ app.get('messages', async (req, res) => {
     }
 
     res.send(filterMessages.slice(-limit))
+    res.send(200)
   } catch (error) {
     res.status(500).send(error.message)
   }
