@@ -173,5 +173,35 @@ app.post('/status', async (req, res) => {
   }
 })
 
+setInterval(async () => {
+  const seconds = Date.now() - 10 * 1000
+
+  try {
+    const inactiveParticipants = await db
+      .collection('participants')
+      .find({ lastStatus: { $lte: seconds } })
+      .toArray()
+
+    if (inactiveParticipants.length > 0) {
+      const inactiveMessage = inactiveParticipants.map(inactiveParticipant => {
+        return {
+          from: inactiveParticipant.name,
+          to: 'Todos',
+          text: 'sai da sala...',
+          type: 'status',
+          time: dayjs().format('HH:mm:ss')
+        }
+      })
+
+      await db.collection('messages').insertMany(inactiveMessage)
+      await db
+        .collection('participants')
+        .deleteMany({ lastStatus: { $lte: seconds } })
+    }
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
+}, 15000)
+
 const PORT = 5000
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`))
