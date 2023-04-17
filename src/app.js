@@ -148,7 +148,29 @@ app.get('messages', async (req, res) => {
   } catch (error) {
     res.status(500).send(error.message)
   }
+})
 
+app.post('/status', async (req, res) => {
+  const { user } = req.headers
+
+  try {
+    const participantExists = await db
+      .collection('participants')
+      .findOne({ name: user })
+
+    if (!participantExists) {
+      res.sendStatus(404)
+      return
+    }
+
+    await db
+      .collection('participants')
+      .updateOne({ name: user }, { $set: { lastStatus: Date.now() } })
+
+    res.send(200)
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
 })
 
 const PORT = 5000
