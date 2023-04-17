@@ -88,5 +88,42 @@ app.get('/participants', async (req, res) => {
   }
 })
 
+app.post('/messages', async (req, res) => {
+  const { to, text, type } = req.body
+  const { user } = req.headers
+
+  try {
+    const message = {
+      from: user,
+      to: to,
+      text: text,
+      type: type,
+      time: dayjs().format('HH:mm:ss')
+    }
+
+    const validation = messageRules.validate(message, { abortEarly: false })
+    if (validation.error) {
+      const errors = validation.error.details.map(detail => detail.message)
+      res.status(422).send(errors)
+      return
+    }
+
+    const participantExists = await db
+      .collection('participants')
+      .findOne({ name: user })
+
+    if (!participantExists) {
+      res.sendStatus(409)
+      return
+    }
+
+    await db.collection("messages").insertOne(message)
+
+    res.send(201)
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
+})
+
 const PORT = 5000
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`))
